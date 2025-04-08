@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte des autobus STS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #ffffff;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+        header img {
+            height: 50px;
+            margin-right: 20px;
+        }
+        .content {
+            display: flex;
+            height: calc(100vh - 70px);
+        }
+        .sidebar {
+            width: 250px;
+            padding: 20px;
+            border-right: 1px solid #ccc;
+        }
+        iframe {
+            flex: 1;
+            border: none;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="{{ url_for('static', filename='images/logoSTS_corporatif_coul.png') }}" alt="Logo STS">
+    <h2>Carte des autobus en temps réel</h2>
+</header>
+
+<div class="content">
+    <div class="sidebar">
+        <form method="get" action="/">
+            <label for="route">Filtrer par ligne :</label>
+            <select name="route_id" id="route" onchange="this.form.submit()">
+                <option value="">Toutes les lignes</option>
+                {% for route in routes %}
+                    <option value="{{ route }}" {% if route == selected_route %}selected{% endif %}>Ligne {{ route }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <iframe src="{{ url_for('static', filename='map.html') }}"></iframe>
+</div>
+
+</body>
+</html>
+
