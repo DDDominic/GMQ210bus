@@ -50,7 +50,6 @@ def get_vehicle_positions(route_filter=None):
 def generate_map(vehicles):
     m = folium.Map(location=[45.4, -71.9], zoom_start=12)
 
-    # Chemin absolu vers l’image sur disque
     icon_path = os.path.join(app.root_path, 'static', 'images', 'bus.png')
 
     for vehicle in vehicles:
@@ -69,6 +68,9 @@ def generate_map(vehicles):
 @app.route('/', methods=['GET'])
 def index():
     selected_route = request.args.get('route_id')
+    if selected_route == "":
+        selected_route = None
+
     vehicles = get_vehicle_positions(route_filter=selected_route)
     generate_map(vehicles)
 
@@ -76,7 +78,7 @@ def index():
     all_vehicles = get_vehicle_positions()
     routes = sorted(set(v['route_id'] for v in all_vehicles), key=lambda r: int(r) if r.isdigit() else r)
 
-    return render_template('index.html', routes=routes, selected_route=selected_route)
+    return render_template('index.html', routes=routes, selected_route=request.args.get('route_id', ''))
 
 if __name__ == '__main__':
     app.run(debug=True)
