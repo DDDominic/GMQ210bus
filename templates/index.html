@@ -42,11 +42,27 @@
             margin-top: 20px;
         }
         .bus-item {
-            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .bus-item h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .bus-item p {
+            margin: 5px 0;
         }
         .bus-item strong {
             display: block;
             margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        .bus-item .label {
+            font-weight: bold;
+            color: #2c3e50;
         }
     </style>
 </head>
@@ -74,10 +90,10 @@
                 <h3>Véhicules sur la ligne {{ selected_route }}</h3>
                 {% for vehicle in vehicles %}
                     <div class="bus-item">
-                        <strong>Véhicule {{ vehicle.vehicle_id }}</strong><br>
-                        Ligne {{ vehicle.route_id }}<br>
-                        Heure : {{ vehicle.timestamp | datetimeformat }}<br>
-                        Position : Latitude {{ vehicle.lat }}, Longitude {{ vehicle.lon }}
+                        <h4>Véhicule {{ vehicle.vehicle_id }}</h4>
+                        <p><span class="label">Ligne :</span> {{ vehicle.route_id }}</p>
+                        <p><span class="label">Heure :</span> {{ vehicle.timestamp | datetimeformat }}</p>
+                        <p><span class="label">Position :</span> Latitude {{ vehicle.lat }}, Longitude {{ vehicle.lon }}</p>
                     </div>
                 {% endfor %}
             {% else %}
