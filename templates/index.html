@@ -28,6 +28,7 @@
             width: 250px;
             padding: 20px;
             border-right: 1px solid #ccc;
+            overflow-y: auto;
         }
         iframe {
             flex: 1;
@@ -36,6 +37,16 @@
         select {
             width: 100%;
             padding: 8px;
+        }
+        .bus-info {
+            margin-top: 20px;
+        }
+        .bus-item {
+            margin-bottom: 10px;
+        }
+        .bus-item strong {
+            display: block;
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -57,6 +68,22 @@
                 {% endfor %}
             </select>
         </form>
+
+        <div class="bus-info">
+            {% if vehicles %}
+                <h3>Véhicules sur la ligne {{ selected_route }}</h3>
+                {% for vehicle in vehicles %}
+                    <div class="bus-item">
+                        <strong>Véhicule {{ vehicle.vehicle_id }}</strong><br>
+                        Ligne {{ vehicle.route_id }}<br>
+                        Heure : {{ vehicle.timestamp | datetimeformat }}<br>
+                        Position : Latitude {{ vehicle.lat }}, Longitude {{ vehicle.lon }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>Aucun véhicule disponible pour la ligne sélectionnée.</p>
+            {% endif %}
+        </div>
     </div>
 
     <iframe src="{{ url_for('static', filename='map.html') }}"></iframe>
@@ -64,4 +91,3 @@
 
 </body>
 </html>
-
