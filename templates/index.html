@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Carte des autobus STS</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/SymboleSTS_coul.png') }}" type="image/png">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -85,17 +86,19 @@
             </select>
         </form>
 
-        <div class="bus-info">
+        <div class="bus-info" id="vehicle-info">
             {% if vehicles %}
                 <h3>Véhicules sur la ligne {{ selected_route }}</h3>
-                {% for vehicle in vehicles %}
-                    <div class="bus-item">
-                        <h4>Véhicule {{ vehicle.vehicle_id }}</h4>
-                        <p><span class="label">Ligne :</span> {{ vehicle.route_id }}</p>
-                        <p><span class="label">Heure :</span> {{ vehicle.timestamp | datetimeformat }}</p>
-                        <p><span class="label">Position :</span> Latitude {{ vehicle.lat }}, Longitude {{ vehicle.lon }}</p>
-                    </div>
-                {% endfor %}
+                <div id="vehicle-list">
+                    {% for vehicle in vehicles %}
+                        <div class="bus-item" id="vehicle-{{ vehicle.vehicle_id }}">
+                            <h4>Véhicule {{ vehicle.vehicle_id }}</h4>
+                            <p><span class="label">Ligne :</span> {{ vehicle.route_id }}</p>
+                            <p><span class="label">Heure :</span> {{ vehicle.timestamp | datetimeformat }}</p>
+                            <p><span class="label">Position :</span> Latitude {{ vehicle.lat }}, Longitude {{ vehicle.lon }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
             {% else %}
                 <p>Aucun véhicule disponible pour la ligne sélectionnée.</p>
             {% endif %}
