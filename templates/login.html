@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Connexion</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/SymboleSTS_coul.png') }}" type="image/png">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body {
@@ -13,6 +14,10 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            flex-direction: column;
+        }
+        .logo-container {
+            margin-bottom: 30px; /* Marge entre le logo et la boîte de connexion */
         }
         .login-box {
             background-color: white;
@@ -20,6 +25,7 @@
             border-radius: 12px;
             box-shadow: 0 0 10px rgba(0,0,0,0.2);
             width: 300px;
+            text-align: center;
         }
         input {
             width: 100%;
@@ -46,6 +52,12 @@
     </style>
 </head>
 <body>
+    <!-- Logo STS -->
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='images/logoSTS_corporatif_coul.png') }}" alt="Logo STS" height="120"> <!-- Taille augmentée -->
+    </div>
+
+    <!-- Formulaire de connexion -->
     <div class="login-box">
         <h2>Connexion</h2>
         <form method="post">

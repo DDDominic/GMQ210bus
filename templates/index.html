@@ -31,7 +31,7 @@
             gap: 10px;
             align-items: center;
         }
-        .refresh-button, .login-button {
+        .login-button {
             background-color: #f0f0f0;
             border: 1px solid #ccc;
             color: #333;
@@ -42,7 +42,7 @@
             transition: background-color 0.3s;
             cursor: pointer;
         }
-        .refresh-button:hover, .login-button:hover {
+        .login-button:hover {
             background-color: #e0e0e0;
         }
         .user-name {
@@ -88,6 +88,38 @@
             font-weight: bold;
             color: #2c3e50;
         }
+
+        /* Style du bouton d'actualisation */
+        .sticky-refresh {
+            position: fixed;
+            bottom: 20px;  /* Ajustez cette valeur pour plus ou moins de marge en bas */
+            right: 20px;   /* Ajustez cette valeur pour plus ou moins de marge à droite */
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            color: #333;
+            padding: 12px 18px;
+            font-size: 24px; /* Taille plus grande pour l'icône */
+            font-weight: bold;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        /* Animation pour tourner l'icône */
+        .sticky-refresh:hover {
+            background-color: #e0e0e0;
+            animation: rotate-icon 0.5s linear;
+        }
+
+        /* Définition de l'animation de rotation */
+        @keyframes rotate-icon {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
@@ -98,8 +130,6 @@
         <h2>Carte des autobus en temps réel</h2>
     </div>
     <div class="header-right">
-        <button class="refresh-button" onclick="location.reload()">Actualiser</button>
-
         {% if session.user %}
             <span class="user-name">👋 Bonjour {{ session.user.name }}</span>
             <a href="/logout" class="login-button">Se déconnecter</a>
@@ -142,6 +172,9 @@
 
     <iframe src="{{ url_for('static', filename='map.html') }}"></iframe>
 </div>
+
+<!-- Bouton actualisation -->
+<button class="sticky-refresh" onclick="location.reload()">↻</button>
 
 </body>
 </html>
