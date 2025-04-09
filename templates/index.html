@@ -12,14 +12,42 @@
         }
         header {
             background: #ffffff;
-            padding: 10px;
+            padding: 10px 20px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             border-bottom: 1px solid #ddd;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
         }
         header img {
             height: 50px;
             margin-right: 20px;
+        }
+        .header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .refresh-button, .login-button {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            color: #333;
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+        .refresh-button:hover, .login-button:hover {
+            background-color: #e0e0e0;
+        }
+        .user-name {
+            font-weight: bold;
+            color: #333;
         }
         .content {
             display: flex;
@@ -56,11 +84,6 @@
         .bus-item p {
             margin: 5px 0;
         }
-        .bus-item strong {
-            display: block;
-            margin-bottom: 5px;
-            color: #2c3e50;
-        }
         .bus-item .label {
             font-weight: bold;
             color: #2c3e50;
@@ -70,8 +93,20 @@
 <body>
 
 <header>
-    <img src="{{ url_for('static', filename='images/logoSTS_corporatif_coul.png') }}" alt="Logo STS">
-    <h2>Carte des autobus en temps réel</h2>
+    <div class="header-left">
+        <img src="{{ url_for('static', filename='images/logoSTS_corporatif_coul.png') }}" alt="Logo STS">
+        <h2>Carte des autobus en temps réel</h2>
+    </div>
+    <div class="header-right">
+        <button class="refresh-button" onclick="location.reload()">Actualiser</button>
+
+        {% if session.user %}
+            <span class="user-name">👋 Bonjour {{ session.user.name }}</span>
+            <a href="/logout" class="login-button">Se déconnecter</a>
+        {% else %}
+            <a href="/login" class="login-button">👤 Se connecter</a>
+        {% endif %}
+    </div>
 </header>
 
 <div class="content">

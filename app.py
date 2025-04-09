@@ -1,25 +1,24 @@
 import requests
 import folium
 from folium import LayerControl
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import datetime
 import os
 from gtfs_functions import Feed
 
 app = Flask(__name__)
+app.secret_key = 'supersecretkey'  # Nécessaire pour les sessions
 
 url = "https://gtfs.sts.qc.ca:8443/gtfsrt/vehiclePositions.txt"
 
 # Charger les données GTFS
-gtfs_path = r'GTFS.zip'  # adapte le chemin si besoin
+gtfs_path = r'GTFS.zip'
 feed = Feed(gtfs_path, time_windows=[0, 6, 10, 12, 16, 19, 24])
 
-# Récupérer les données des routes, arrêts et shapes
 routes = feed.routes
 stops = feed.stops
 shapes = feed.shapes
 
-# Récupérer les positions des bus, avec la position la plus récente par véhicule
 def get_vehicle_positions(route_filter=None):
     try:
         response = requests.get(url)
@@ -56,19 +55,15 @@ def get_vehicle_positions(route_filter=None):
         print(f"Erreur lors de la récupération des données : {e}")
         return []
 
-# Fonction de formatage pour l'heure
 @app.template_filter('datetimeformat')
 def datetimeformat(value):
     return datetime.fromtimestamp(value).strftime("%H:%M:%S")
 
-# Générer la carte avec les icônes personnalisées et les arrêts
 def generate_map(vehicles, show_stops=True, show_routes=True, show_vehicles=True):
     m = folium.Map(location=[45.4, -71.9], zoom_start=12)
 
-    # Icône personnalisée pour les bus
     icon_path = os.path.join(app.root_path, 'static', 'images', 'bus.png')
 
-    # Ajouter les arrêts à la carte
     stop_layer = folium.FeatureGroup(name="Arrêts")
     if show_stops:
         for _, stop in stops.iterrows():
@@ -87,14 +82,12 @@ def generate_map(vehicles, show_stops=True, show_routes=True, show_vehicles=True
             ).add_to(stop_layer)
     stop_layer.add_to(m)
 
-    # Ajouter chaque shape à la carte (lignes)
     route_layer = folium.FeatureGroup(name="Lignes")
     if show_routes:
         for _, row in shapes.iterrows():
             folium.GeoJson(row.geometry).add_to(route_layer)
     route_layer.add_to(m)
 
-    # Ajouter les bus à la carte
     vehicle_layer = folium.FeatureGroup(name="Véhicules")
     if show_vehicles:
         for vehicle in vehicles:
@@ -108,12 +101,9 @@ def generate_map(vehicles, show_stops=True, show_routes=True, show_vehicles=True
             ).add_to(vehicle_layer)
     vehicle_layer.add_to(m)
 
-    # Ajouter un contrôle pour activer/désactiver les couches
     LayerControl().add_to(m)
-
     m.save("static/map.html")
 
-# Page principale
 @app.route('/', methods=['GET'])
 def index():
     selected_route = request.args.get('route_id')
@@ -127,12 +117,36 @@ def index():
     vehicles = get_vehicle_positions(route_filter=selected_route)
     generate_map(vehicles, show_stops=show_stops, show_routes=show_routes, show_vehicles=show_vehicles)
 
-    # Liste triée des lignes disponibles
     all_vehicles = get_vehicle_positions()
-    routes = sorted(set(v['route_id'] for v in all_vehicles), key=lambda r: int(r) if r.isdigit() else r)
+    route_list = sorted(set(v['route_id'] for v in all_vehicles), key=lambda r: int(r) if r.isdigit() else r)
 
-    return render_template('index.html', routes=routes, selected_route=request.args.get('route_id', ''),
-                           show_stops=show_stops, show_routes=show_routes, show_vehicles=show_vehicles, vehicles=vehicles)
+    return render_template(
+        'index.html',
+        routes=route_list,
+        selected_route=request.args.get('route_id', ''),
+        show_stops=show_stops,
+        show_routes=show_routes,
+        show_vehicles=show_vehicles,
+        vehicles=vehicles,
+        session=session
+    )
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username == 'admin' and password == '1234':
+            session['user'] = {'name': 'Admin'}
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error="Nom d'utilisateur ou mot de passe incorrect.")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
