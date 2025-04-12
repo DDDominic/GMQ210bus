@@ -1,0 +1,259 @@
+/* Body de la page */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* Header */
+header {
+    background: #2C3E50;
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    border-bottom: 2px solid #34495E;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+header img {
+    height: 65px;
+    margin-right: 25px;
+    filter: brightness(0) invert(1); /* Teinte blanche */
+}
+
+.header-left h2 {
+    font-size: 22px;
+    font-weight: bold;
+    color: white;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.login-button {
+    background-color: #34495E;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+.login-button:hover {
+    background-color: #2C3E50;
+}
+
+.user-name {
+    font-weight: bold;
+    margin-right: 20px;
+}
+
+/* Content (la carte et la sidebar) */
+.content {
+    display: flex;
+    height: calc(100vh - 80px);
+}
+
+.sidebar {
+    width: 300px;
+    padding: 20px;
+    background-color: #ecf0f1;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    border-right: 2px solid #ddd;
+}
+
+#map {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+.bus-info {
+    margin-top: 20px;
+}
+
+.bus-item {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bus-item h4 {
+    color: #2C3E50;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.bus-item p {
+    margin: 8px 0;
+    font-size: 16px;
+}
+
+.bus-item .label {
+    font-weight: bold;
+    color: #34495E;
+}
+
+.sticky-refresh {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: #34495E;
+    border: none;
+    color: white;
+    padding: 15px 20px;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    z-index: 9999; /* Assurez-vous que le bouton est au-dessus de la carte */
+}
+
+.sticky-refresh:hover {
+    background-color: #34495E;
+    transform: rotate(360deg);
+}
+
+/* Conteneur pour centrer la boîte de connexion */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 75vh; /* Utilise toute la hauteur de la fenêtre */
+    padding: 0 20px; /* Ajouter un peu de marge sur les côtés pour éviter le débordement */
+}
+
+/* Boîte de connexion */
+.login-box {
+    width: 350px; /* Augmenter la largeur pour une meilleure visibilité */
+    padding: 40px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: center;
+    border-top: 4px solid #2C3E50; /* Ajouter un bord supérieur pour la cohérence avec le header */
+}
+
+.login-box h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #2C3E50;  /* Assurer une couleur de texte similaire à celle du header */
+    font-weight: bold;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 16px;
+    background-color: #ecf0f1;  /* Couleur de fond pour l'input similaire à celle du sidebar */
+}
+
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    background-color: #34495E;  /* Utiliser la même couleur que les boutons du site */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.login-box button:hover {
+    background-color: #2C3E50;  /* Couleur de survol cohérente avec le site */
+    transform: scale(1.05);  /* Ajouter un effet de zoom au survol */
+}
+
+.error {
+    color: red;
+    margin-top: 15px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Conteneur de la carte statique*/
+.map-container {
+    flex-grow: 1;  /* Permet à la carte de prendre tout l'espace restant */
+}
+
+iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.btn-filtre {
+    background-color: #2C3E50; /* Couleur de fond */
+    color: white; /* Couleur du texte */
+    padding: 10px 20px; /* Espace intérieur */
+    border: none; /* Pas de bordure */
+    border-radius: 5px; /* Coins arrondis */
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-filtre:hover {
+    background-color: #34495E; /* Couleur au survol */
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    background-color: #34495E;
+    color: white;
+    padding: px 0;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+footer p {
+    font-size: 14px;
+}
+
+/* Style pour les petites résolutions */
+@media screen and (max-width: 768px) {
+    .login-box {
+        width: 90%;
+        margin-top: 50px;  /* Ajustement pour mieux placer la boîte de connexion sur les petits écrans */
+    }
+}
+

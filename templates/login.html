@@ -1,73 +1,37 @@
-<!-- templates/login.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>Connexion</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/SymboleSTS_coul.png') }}" type="image/png">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f1f1f1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-        }
-        .logo-container {
-            margin-bottom: 30px; /* Marge entre le logo et la boîte de connexion */
-        }
-        .login-box {
-            background-color: white;
-            padding: 2em;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            width: 300px;
-            text-align: center;
-        }
-        input {
-            width: 100%;
-            margin-top: 10px;
-            padding: 0.5em;
-            font-size: 1em;
-        }
-        button {
-            margin-top: 15px;
-            padding: 0.5em;
-            font-size: 1em;
-            width: 100%;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .error {
-            color: red;
-            margin-top: 10px;
-            text-align: center;
-        }
-    </style>
 </head>
 <body>
-    <!-- Logo STS -->
-    <div class="logo-container">
-        <img src="{{ url_for('static', filename='images/logoSTS_corporatif_coul.png') }}" alt="Logo STS" height="120"> <!-- Taille augmentée -->
-    </div>
+    <!-- Header avec logo -->
+    <header>
+        <div class="header-left">
+            <img src="{{ url_for('static', filename='images/logoSTS_corporatif_coul.png') }}" alt="Logo STS">
+            <h2>Page de Connexion</h2>
+        </div>
+    </header>
 
     <!-- Formulaire de connexion -->
-    <div class="login-box">
-        <h2>Connexion</h2>
-        <form method="post">
-            <input type="text" name="username" placeholder="Nom d'utilisateur" required>
-            <input type="password" name="password" placeholder="Mot de passe" required>
-            <button type="submit">Se connecter</button>
-        </form>
-        {% if error %}
-            <div class="error">{{ error }}</div>
-        {% endif %}
+    <div class="login-container">
+        <div class="login-box">
+            <h2>Connexion</h2>
+            <form method="post">
+                <input type="text" name="username" placeholder="Nom d'utilisateur" required>
+                <input type="password" name="password" placeholder="Mot de passe" required>
+                <button type="submit">Se connecter</button>
+            </form>
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+        </div>
     </div>
+
+    <footer>
+        <p>&copy; 2025 Projet GMQ210 - Caron & Perreault - Tous droits réservés</p>
+    </footer>
 </body>
 </html>
+

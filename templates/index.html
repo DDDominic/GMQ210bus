@@ -4,123 +4,18 @@
     <meta charset="UTF-8">
     <title>Carte des autobus STS</title>
     <link rel="icon" href="{{ url_for('static', filename='images/SymboleSTS_coul.png') }}" type="image/png">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background: #ffffff;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #ddd;
-        }
-        .header-left {
-            display: flex;
-            align-items: center;
-        }
-        header img {
-            height: 50px;
-            margin-right: 20px;
-        }
-        .header-right {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .login-button {
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            color: #333;
-            padding: 8px 12px;
-            font-size: 14px;
-            border-radius: 5px;
-            text-decoration: none;
-            transition: background-color 0.3s;
-            cursor: pointer;
-        }
-        .login-button:hover {
-            background-color: #e0e0e0;
-        }
-        .user-name {
-            font-weight: bold;
-            color: #333;
-        }
-        .content {
-            display: flex;
-            height: calc(100vh - 70px);
-        }
-        .sidebar {
-            width: 250px;
-            padding: 20px;
-            border-right: 1px solid #ccc;
-            overflow-y: auto;
-        }
-        iframe {
-            flex: 1;
-            border: none;
-        }
-        select {
-            width: 100%;
-            padding: 8px;
-        }
-        .bus-info {
-            margin-top: 20px;
-        }
-        .bus-item {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-        }
-        .bus-item h4 {
-            margin-top: 0;
-            color: #333;
-        }
-        .bus-item p {
-            margin: 5px 0;
-        }
-        .bus-item .label {
-            font-weight: bold;
-            color: #2c3e50;
-        }
 
-        /* Style du bouton d'actualisation */
-        .sticky-refresh {
-            position: fixed;
-            bottom: 20px;  /* Ajustez cette valeur pour plus ou moins de marge en bas */
-            right: 20px;   /* Ajustez cette valeur pour plus ou moins de marge à droite */
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            color: #333;
-            padding: 12px 18px;
-            font-size: 24px; /* Taille plus grande pour l'icône */
-            font-weight: bold;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.3s;
-        }
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        /* Animation pour tourner l'icône */
-        .sticky-refresh:hover {
-            background-color: #e0e0e0;
-            animation: rotate-icon 0.5s linear;
-        }
+    <!-- Leaflet MarkerCluster -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
-        /* Définition de l'animation de rotation */
-        @keyframes rotate-icon {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
+    <!-- Lien vers le fichier CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -141,6 +36,13 @@
 
 <div class="content">
     <div class="sidebar">
+        <!-- Carte statique placée ici -->
+        <div style="margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #ccc;">
+            <a href="{{ url_for('carte') }}" style="text-decoration: none; color: #2C3E50; font-weight: bold;">
+                Voir la carte statique
+            </a>
+        </div>
+
         <form method="get" action="/">
             <label for="route">Filtrer par ligne :</label>
             <select name="route_id" id="route" onchange="this.form.submit()">
@@ -170,11 +72,103 @@
         </div>
     </div>
 
-    <iframe src="{{ url_for('static', filename='map.html') }}"></iframe>
+    <!-- Carte Leaflet directement intégrée -->
+    <div id="map"></div>
 </div>
 
-<!-- Bouton actualisation -->
-<button class="sticky-refresh" onclick="location.reload()">↻</button>
+<!-- Conteneur des boutons -->
+<div class="sticky-buttons">
+    <button class="sticky-refresh" onclick="location.reload()">↻</button>
+</div>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    const busIcon = L.icon({
+        iconUrl: "{{ url_for('static', filename='images/bus.png') }}",
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+    });
+
+    const map = L.map('map').setView([45.4, -71.9], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const busCluster = L.markerClusterGroup({
+        iconCreateFunction: function(cluster) {
+            const count = cluster.getChildCount();
+            const color = "#2C3E50";  // Couleur du cluster
+            const radius = Math.min(30 + count * 2, 50);  // Taille du cluster
+
+            return L.divIcon({
+                className: 'cluster',
+                html: `<div style="background-color: ${color}; color: white; border-radius: 50%; padding: 10px; 
+                            text-align: center; line-height: 1.5; font-size: 14px;">
+                        ${count}
+                       </div>`,
+                iconSize: [radius, radius],
+                iconAnchor: [radius / 2, radius / 2],
+                popupAnchor: [0, -radius / 2]
+            });
+        }
+    });
+
+    map.addLayer(busCluster);  // Ajoute le groupe de clusters à la carte
+
+    function updateBusPositions() {
+        const routeId = '{{ selected_route }}';
+
+        const params = routeId ? { route_id: routeId } : {};
+
+        $.ajax({
+            url: '/get_vehicle_positions',
+            type: 'GET',
+            data: params,
+            success: function(data) {
+                const vehicleList = $('#vehicle-list');
+                vehicleList.empty();
+
+                busCluster.clearLayers();
+
+                data.forEach(function(vehicle) {
+                    const popupContent = `
+                        Véhicule ${vehicle.vehicle_id}<br>
+                        Ligne ${vehicle.route_id}<br>
+                        Heure: ${new Date(vehicle.timestamp * 1000).toLocaleTimeString()}
+                    `;
+
+                    const marker = L.marker([vehicle.lat, vehicle.lon], {icon: busIcon})
+                        .bindPopup(popupContent);
+
+                    busCluster.addLayer(marker);
+
+                    const vehicleHtml = `
+                        <div class="bus-item" id="vehicle-${vehicle.vehicle_id}">
+                            <h4>Véhicule ${vehicle.vehicle_id}</h4>
+                            <p><span class="label">Ligne :</span> ${vehicle.route_id}</p>
+                            <p><span class="label">Heure :</span> ${new Date(vehicle.timestamp * 1000).toLocaleTimeString()}</p>
+                            <p><span class="label">Position :</span> Latitude ${vehicle.lat}, Longitude ${vehicle.lon}</p>
+                        </div>
+                    `;
+                    vehicleList.append(vehicleHtml);
+                });
+            }
+        });
+    }
+
+    setInterval(updateBusPositions, 30000);
+    updateBusPositions();
+
+    // Ajout d'un contrôle de couches
+    const overlayMaps = {
+        "Bus": busCluster
+    };
+
+    L.control.layers(null, overlayMaps).addTo(map);  // Ajoute le contrôle pour basculer les couches
+</script>
 
 </body>
 </html>

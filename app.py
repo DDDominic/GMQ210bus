@@ -1,17 +1,16 @@
-import requests
-import folium
-from folium import LayerControl
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from datetime import datetime
-import os
+import folium
+from folium import FeatureGroup
 from gtfs_functions import Feed
+import zipfile
+import pandas as pd
+import requests
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'  # Nécessaire pour les sessions
+app.secret_key = 'supersecretkey'
 
 url = "https://gtfs.sts.qc.ca:8443/gtfsrt/vehiclePositions.txt"
-
-# Charger les données GTFS
 gtfs_path = r'GTFS.zip'
 feed = Feed(gtfs_path, time_windows=[0, 6, 10, 12, 16, 19, 24])
 
@@ -59,63 +58,16 @@ def get_vehicle_positions(route_filter=None):
 def datetimeformat(value):
     return datetime.fromtimestamp(value).strftime("%H:%M:%S")
 
-def generate_map(vehicles, show_stops=True, show_routes=True, show_vehicles=True):
-    m = folium.Map(location=[45.4, -71.9], zoom_start=12)
-
-    icon_path = os.path.join(app.root_path, 'static', 'images', 'bus.png')
-
-    stop_layer = folium.FeatureGroup(name="Arrêts")
-    if show_stops:
-        for _, stop in stops.iterrows():
-            stop_lat = stop['stop_lat']
-            stop_lon = stop['stop_lon']
-            stop_name = stop['stop_name']
-
-            folium.CircleMarker(
-                location=[stop_lat, stop_lon],
-                radius=4,
-                color='blue',
-                fill=True,
-                fill_color='blue',
-                fill_opacity=0.6,
-                popup=f"Arrêt : {stop_name}"
-            ).add_to(stop_layer)
-    stop_layer.add_to(m)
-
-    route_layer = folium.FeatureGroup(name="Lignes")
-    if show_routes:
-        for _, row in shapes.iterrows():
-            folium.GeoJson(row.geometry).add_to(route_layer)
-    route_layer.add_to(m)
-
-    vehicle_layer = folium.FeatureGroup(name="Véhicules")
-    if show_vehicles:
-        for vehicle in vehicles:
-            icon = folium.CustomIcon(icon_path, icon_size=(32, 32), icon_anchor=(16, 16))
-            time_str = datetime.fromtimestamp(vehicle['timestamp']).strftime("%H:%M:%S")
-
-            folium.Marker(
-                location=[vehicle['lat'], vehicle['lon']],
-                popup=f"Véhicule {vehicle['vehicle_id']} (Ligne {vehicle['route_id']})<br>Heure: {time_str}",
-                icon=icon
-            ).add_to(vehicle_layer)
-    vehicle_layer.add_to(m)
-
-    LayerControl().add_to(m)
-    m.save("static/map.html")
+@app.route('/get_vehicle_positions', methods=['GET'])
+def vehicle_positions():
+    route_id = request.args.get('route_id')
+    vehicles = get_vehicle_positions(route_filter=route_id)
+    return jsonify(vehicles)
 
 @app.route('/', methods=['GET'])
 def index():
-    selected_route = request.args.get('route_id')
-    if selected_route == "":
-        selected_route = None
-
-    show_stops = request.args.get('show_stops', 'true') == 'true'
-    show_routes = request.args.get('show_routes', 'true') == 'true'
-    show_vehicles = request.args.get('show_vehicles', 'true') == 'true'
-
-    vehicles = get_vehicle_positions(route_filter=selected_route)
-    generate_map(vehicles, show_stops=show_stops, show_routes=show_routes, show_vehicles=show_vehicles)
+    selected_route = request.args.get('route_id', '')
+    vehicles = get_vehicle_positions(route_filter=selected_route if selected_route else None)
 
     all_vehicles = get_vehicle_positions()
     route_list = sorted(set(v['route_id'] for v in all_vehicles), key=lambda r: int(r) if r.isdigit() else r)
@@ -123,11 +75,10 @@ def index():
     return render_template(
         'index.html',
         routes=route_list,
-        selected_route=request.args.get('route_id', ''),
-        show_stops=show_stops,
-        show_routes=show_routes,
-        show_vehicles=show_vehicles,
+        selected_route=selected_route,
         vehicles=vehicles,
+        stops=stops,
+        shapes=shapes,
         session=session
     )
 
@@ -147,6 +98,122 @@ def login():
 def logout():
     session.pop('user', None)
     return redirect(url_for('index'))
+
+@app.route('/carte', methods=['GET'])
+def carte():
+    selected_route_short_name = request.args.get('route_short_name')
+    selected_route_long_name = request.args.get('route_long_name')
+
+    # Obtenir les coordonnées de la boîte englobante
+    bounding_box = feed.get_bbox()
+    coordinates = [[lat, lon] for lon, lat in bounding_box['coordinates'][0]]
+    center_lat = sum(p[0] for p in coordinates) / len(coordinates)
+    center_lon = sum(p[1] for p in coordinates) / len(coordinates)
+
+    # Créer la carte Folium
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles=None)
+    folium.TileLayer('OpenStreetMap', name="Classique").add_to(m)
+    folium.TileLayer('CartoDB positron', name="Clair").add_to(m)
+
+    # Lire les fichiers GTFS
+    with zipfile.ZipFile(gtfs_path, 'r') as z:
+        shapes_df = pd.read_csv(z.open('shapes.txt'))
+        routes_df = pd.read_csv(z.open('routes.txt'))
+        trips_df = pd.read_csv(z.open('trips.txt'))
+        stops_df = pd.read_csv(z.open('stops.txt'))
+
+    # Convertir les types de données
+    shapes_df['shape_id'] = shapes_df['shape_id'].astype(str)
+    routes_df['route_id'] = routes_df['route_id'].astype(str)
+    routes_df['route_short_name'] = routes_df['route_short_name'].astype(str)
+    routes_df['route_long_name'] = routes_df['route_long_name'].astype(str)
+    trips_df['shape_id'] = trips_df['shape_id'].astype(str)
+    trips_df['route_id'] = trips_df['route_id'].astype(str)
+
+    # Filtrer les routes à afficher
+    routes_df = routes_df[~routes_df['route_short_name'].isin(["HLP", "Entree", "Sortie"])]
+
+    # Trier les routes par route_short_name de manière numérique
+    routes_df['route_short_name'] = pd.to_numeric(routes_df['route_short_name'], errors='coerce')
+    routes_df = routes_df.sort_values(by='route_short_name', na_position='last')
+    routes_df['route_short_name'] = routes_df['route_short_name'].astype(str)
+
+    # Filtrer selon les critères de la requête GET (route_short_name et route_long_name)
+    if selected_route_short_name:
+        routes_df = routes_df[routes_df['route_short_name'] == selected_route_short_name]
+    if selected_route_long_name:
+        routes_df = routes_df[routes_df['route_long_name'] == selected_route_long_name]
+
+    routes = routes_df.to_dict(orient='records')
+    routes_to_display = routes_df
+
+    for _, route in routes_to_display.iterrows():
+        route_id = route['route_id']
+        route_name = route.get('route_short_name', 'Unnamed')
+        route_long_name = route.get('route_long_name', '')
+        route_color = f"#{route['route_color']}" if pd.notna(route.get('route_color')) else 'red'
+
+        trip_shapes = trips_df[trips_df['route_id'] == route_id][['shape_id']].drop_duplicates()
+
+        route_group = FeatureGroup(name=f"Ligne {route_name} ({route_long_name})")
+
+        for _, trip in trip_shapes.iterrows():
+            shape_id = trip['shape_id']
+            shape_points = shapes_df[shapes_df['shape_id'] == shape_id].sort_values('shape_pt_sequence')
+            coords = shape_points[['shape_pt_lat', 'shape_pt_lon']].values.tolist()
+
+            if coords:
+                folium.PolyLine(
+                    coords,
+                    color=route_color,
+                    weight=4,
+                    opacity=0.8,
+                    popup=f"Ligne {route_name}<br>{route_long_name}"
+                ).add_to(route_group)
+
+        route_group.add_to(m)
+
+    # Ajouter les arrêts à la carte
+    stops_group = FeatureGroup(name="Arrêts")
+    for _, stop in stops_df.iterrows():
+        folium.CircleMarker(
+            location=[stop['stop_lat'], stop['stop_lon']],
+            radius=4,
+            color='blue',
+            fill=True,
+            fill_color='blue',
+            fill_opacity=0.7,
+            popup=stop['stop_name']
+        ).add_to(stops_group)
+    stops_group.add_to(m)
+
+    # Ajouter la boîte englobante à la carte
+    bbox_group = FeatureGroup(name="Étendue géographique")
+    folium.Polygon(
+        locations=coordinates,
+        color='blue',
+        fill=True,
+        fill_color='blue',
+        fill_opacity=0.3,
+        popup="Étendue des données GTFS"
+    ).add_to(bbox_group)
+    bbox_group.add_to(m)
+
+    folium.LayerControl(collapsed=False).add_to(m)
+
+    # Enregistrer la carte
+    map_path = 'static/carte.html'
+    m.save(map_path)
+
+    # Liste des noms de lignes (pour afficher dans le formulaire)
+    short_names = routes_df['route_short_name'].unique().tolist()
+
+    return render_template('carte.html',
+                           map_path=map_path,
+                           routes=routes,
+                           short_names=short_names,
+                           selected_route_short_name=selected_route_short_name,
+                           selected_route_long_name=selected_route_long_name)
 
 if __name__ == '__main__':
     app.run(debug=True)

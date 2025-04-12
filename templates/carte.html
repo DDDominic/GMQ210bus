@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte statique des lignes STS</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/SymboleSTS_coul.png') }}" type="image/png">
+    <!-- Lien vers le fichier CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Lien vers jQuery (si tu ne l'as pas déjà) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        $(document).ready(function(){
+            // Convertir les routes en tableau JavaScript
+            var routes = {{ routes | tojson | safe }};
+
+            // Remplir le menu route_short_name
+            var uniqueShortNames = [];
+            routes.forEach(function(route) {
+                if (!uniqueShortNames.includes(route.route_short_name)) {
+                    uniqueShortNames.push(route.route_short_name);
+                    $('#route_short_name').append('<option value="' + route.route_short_name + '">Ligne ' + route.route_short_name + '</option>');
+                }
+            });
+
+            // Lorsque le route_short_name change, mettre à jour le menu route_long_name
+            $('#route_short_name').change(function(){
+                var selectedShortName = $(this).val();
+
+                // Vider le menu route_long_name et réinitialiser
+                $('#route_long_name').empty();
+                $('#route_long_name').append('<option value="">Sélectionner une ligne complète</option>');
+
+                // Filtrer et afficher les options correspondantes
+                routes.forEach(function(route) {
+                    if (route.route_short_name === selectedShortName) {
+                        $('#route_long_name').append('<option value="' + route.route_long_name + '">' + route.route_long_name + '</option>');
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <img src="{{ url_for('static', filename='images/logoSTS_corporatif_coul.png') }}" alt="Logo STS">
+        <h2>Carte statique des lignes d’autobus</h2>
+    </div>
+    <div class="header-right">
+        {% if session.user %}
+            <span class="user-name">👋 Bonjour {{ session.user.name }}</span>
+            <a href="/logout" class="login-button">Se déconnecter</a>
+        {% else %}
+            <a href="/login" class="login-button">👤 Se connecter</a>
+        {% endif %}
+    </div>
+</header>
+
+<div class="content">
+    <div class="sidebar">
+        <!-- Lien retour -->
+        <div style="margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #ccc;">
+            <a href="{{ url_for('index') }}" style="text-decoration: none; color: #2C3E50; font-weight: bold;">
+                ↩ Retour à la carte en temps réel
+            </a>
+        </div>
+
+        <!-- Formulaire de filtrage par ligne -->
+        <form method="get" action="{{ url_for('carte') }}">
+            <label for="route_short_name">Filtrer par ligne :</label>
+            <select name="route_short_name" id="route_short_name">
+                <option value="">Toutes les lignes</option>
+            </select>
+
+            <label for="route_long_name">Choisir une direction :</label>
+            <select name="route_long_name" id="route_long_name">
+                <option value="">Sélectionner une direction</option>
+            </select>
+            <input type="submit" value="Appliquer le filtre" class="btn-filtre">
+        </form>
+
+        <!-- Info complémentaire -->
+        {% if selected_route_short_name or selected_route_long_name %}
+            <div style="margin-top: 20px;">
+                <p style="font-weight: bold;">
+                    {% if selected_route_short_name %}
+                        Ligne {{ selected_route_short_name }}<br>
+                    {% endif %}
+                    {% if selected_route_long_name %}
+                        Direction : {{ selected_route_long_name }}<br>
+                    {% endif %}
+                </p>
+                <p>La carte ci-contre affiche uniquement la ligne filtrée.</p>
+            </div>
+        {% else %}
+            <p style="margin-top: 20px;">Toutes les lignes sont affichées sur la carte.</p>
+        {% endif %}
+    </div>
+
+    <div class="map-container">
+        <iframe src="{{ url_for('static', filename='carte.html') }}" style="width: 100%; height: 100vh; border: none;"></iframe>
+    </div>
+</div>
+
+</body>
+</html>
