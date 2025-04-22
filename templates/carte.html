@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <title>Carte statique des lignes STS</title>
     <link rel="icon" href="{{ url_for('static', filename='images/SymboleSTS_coul.png') }}" type="image/png">
-    <!-- Lien vers le fichier CSS -->
+
+    <!-- Lien vers le fichier CSS personnalisé -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <!-- Lien vers jQuery (si tu ne l'as pas déjà) -->
+    <!-- Intégration de jQuery pour afficher nom des lignes en fonction du numéro de ligne -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
@@ -15,7 +16,7 @@
             // Convertir les routes en tableau JavaScript
             var routes = {{ routes | tojson | safe }};
 
-            // Remplir le menu route_short_name
+            // Remplir le menu route_short_name avec les lignes uniques
             var uniqueShortNames = [];
             routes.forEach(function(route) {
                 if (!uniqueShortNames.includes(route.route_short_name)) {
@@ -24,15 +25,15 @@
                 }
             });
 
-            // Lorsque le route_short_name change, mettre à jour le menu route_long_name
+            // Mettre à jour le menu route_long_name lorsque route_short_name change
             $('#route_short_name').change(function(){
                 var selectedShortName = $(this).val();
 
-                // Vider le menu route_long_name et réinitialiser
+                // Vider et réinitialiser le menu route_long_name
                 $('#route_long_name').empty();
                 $('#route_long_name').append('<option value="">Sélectionner une ligne complète</option>');
 
-                // Filtrer et afficher les options correspondantes
+                // Filtrer et afficher les options correspondantes au numéro de ligne sélectionné
                 routes.forEach(function(route) {
                     if (route.route_short_name === selectedShortName) {
                         $('#route_long_name').append('<option value="' + route.route_long_name + '">' + route.route_long_name + '</option>');
@@ -51,9 +52,11 @@
     </div>
     <div class="header-right">
         {% if session.user %}
+            <!-- Affichage du nom de l'utilisateur connecté et bouton de déconnexion -->
             <span class="user-name">👋 Bonjour {{ session.user.name }}</span>
             <a href="/logout" class="login-button">Se déconnecter</a>
         {% else %}
+            <!-- Bouton de connexion si non connectés -->
             <a href="/login" class="login-button">👤 Se connecter</a>
         {% endif %}
     </div>
@@ -61,14 +64,14 @@
 
 <div class="content">
     <div class="sidebar">
-        <!-- Lien retour -->
+        <!-- Lien vers la carte des bus en temps réel -->
         <div style="margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #ccc;">
             <a href="{{ url_for('index') }}" style="text-decoration: none; color: #2C3E50; font-weight: bold;">
                 ↩ Retour à la carte en temps réel
             </a>
         </div>
 
-        <!-- Formulaire de filtrage par ligne -->
+        <!-- Formulaire pour filtrer les lignes de bus -->
         <form method="get" action="{{ url_for('carte') }}">
             <label for="route_short_name">Filtrer par ligne :</label>
             <select name="route_short_name" id="route_short_name">
@@ -82,7 +85,7 @@
             <input type="submit" value="Appliquer le filtre" class="btn-filtre">
         </form>
 
-        <!-- Info complémentaire -->
+        <!-- Affichage des informations sur les filtres appliqués -->
         {% if selected_route_short_name or selected_route_long_name %}
             <div style="margin-top: 20px;">
                 <p style="font-weight: bold;">
@@ -100,6 +103,7 @@
         {% endif %}
     </div>
 
+    <!-- Carte statique dans un iframe-->
     <div class="map-container">
         <iframe src="{{ url_for('static', filename='carte.html') }}" style="width: 100%; height: 100vh; border: none;"></iframe>
     </div>

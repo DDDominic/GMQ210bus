@@ -5,16 +5,16 @@
     <title>Carte des autobus STS</title>
     <link rel="icon" href="{{ url_for('static', filename='images/SymboleSTS_coul.png') }}" type="image/png">
 
-    <!-- Leaflet -->
+    <!-- Intégration des bibliothèques Leaflet pour la carte -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Leaflet MarkerCluster -->
+    <!-- Intégration de Leaflet MarkerCluster pour gérer les clusters de marqueurs -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
-    <!-- Lien vers le fichier CSS -->
+    <!-- Lien vers le fichier CSS personnalisé -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -26,9 +26,11 @@
     </div>
     <div class="header-right">
         {% if session.user %}
+            <!-- Affichage du nom de l'utilisateur connecté et bouton de déconnexion -->
             <span class="user-name">👋 Bonjour {{ session.user.name }}</span>
             <a href="/logout" class="login-button">Se déconnecter</a>
         {% else %}
+            <!-- Bouton de connexion pour les utilisateurs non authentifiés -->
             <a href="/login" class="login-button">👤 Se connecter</a>
         {% endif %}
     </div>
@@ -36,13 +38,14 @@
 
 <div class="content">
     <div class="sidebar">
-        <!-- Carte statique placée ici -->
+        <!-- Bouton pour accéder à la carte statique -->
         <div style="margin-bottom: 20px; padding: 10px; border-bottom: 1px solid #ccc;">
             <a href="{{ url_for('carte') }}" style="text-decoration: none; color: #2C3E50; font-weight: bold;">
                 Voir la carte statique
             </a>
         </div>
 
+        <!-- Formulaire pour filtrer les lignes de bus -->
         <form method="get" action="/">
             <label for="route">Filtrer par ligne :</label>
             <select name="route_id" id="route" onchange="this.form.submit()">
@@ -53,6 +56,7 @@
             </select>
         </form>
 
+        <!-- Affichage des informations des véhicules -->
         <div class="bus-info" id="vehicle-info">
             {% if vehicles %}
                 <h3>Véhicules sur la ligne {{ selected_route }}</h3>
@@ -72,31 +76,35 @@
         </div>
     </div>
 
-    <!-- Carte Leaflet directement intégrée -->
+    <!-- Carte Leaflet intégrée directement dans la page -->
     <div id="map"></div>
 </div>
 
-<!-- Conteneur des boutons -->
+<!-- Conteneur des boutons flottants -->
 <div class="sticky-buttons">
     <button class="sticky-refresh" onclick="location.reload()">↻</button>
 </div>
 
-<!-- jQuery -->
+<!-- Intégration de jQuery pour les requêtes AJAX -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+    // Définition de l'icône personnalisée pour les bus
     const busIcon = L.icon({
         iconUrl: "{{ url_for('static', filename='images/bus.png') }}",
         iconSize: [32, 32],
         iconAnchor: [16, 16]
     });
 
+    // Initialisation de la carte Leaflet
     const map = L.map('map').setView([45.4, -71.9], 12);
 
+    // Ajout de la couche de tuiles OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
+    // Création d'un groupe de clusters pour les marqueurs de bus
     const busCluster = L.markerClusterGroup({
         iconCreateFunction: function(cluster) {
             const count = cluster.getChildCount();
@@ -105,7 +113,7 @@
 
             return L.divIcon({
                 className: 'cluster',
-                html: `<div style="background-color: ${color}; color: white; border-radius: 50%; padding: 10px; 
+                html: `<div style="background-color: ${color}; color: white; border-radius: 50%; padding: 10px;
                             text-align: center; line-height: 1.5; font-size: 14px;">
                         ${count}
                        </div>`,
@@ -118,6 +126,7 @@
 
     map.addLayer(busCluster);  // Ajoute le groupe de clusters à la carte
 
+    // Fonction pour mettre à jour les positions des bus sur la carte
     function updateBusPositions() {
         const routeId = '{{ selected_route }}';
 
@@ -159,15 +168,16 @@
         });
     }
 
+    // Mise à jour des positions des bus toutes les 30 secondes
     setInterval(updateBusPositions, 30000);
     updateBusPositions();
 
-    // Ajout d'un contrôle de couches
+    // Ajout d'un contrôle de couches pour basculer entre les différentes couches de la carte
     const overlayMaps = {
         "Bus": busCluster
     };
 
-    L.control.layers(null, overlayMaps).addTo(map);  // Ajoute le contrôle pour basculer les couches
+    L.control.layers(null, overlayMaps).addTo(map);
 </script>
 
 </body>

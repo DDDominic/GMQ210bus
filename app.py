@@ -7,18 +7,25 @@ import zipfile
 import pandas as pd
 import requests
 
+# Initialisation de l'application Flask
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'
+app.secret_key = 'supersecretkey'  # Clé secrète pour les sessions
 
+# URL pour récupérer les positions des véhicules en temps réel
 url = "https://gtfs.sts.qc.ca:8443/gtfsrt/vehiclePositions.txt"
-gtfs_path = r'GTFS.zip'
-feed = Feed(gtfs_path, time_windows=[0, 6, 10, 12, 16, 19, 24])
+gtfs_path = r'GTFS.zip'  # Chemin vers le fichier GTFS
+feed = Feed(gtfs_path, time_windows=[0, 6, 10, 12, 16, 19, 24])  # Initialisation de l'objet Feed
 
+# Chargement des données GTFS
 routes = feed.routes
 stops = feed.stops
 shapes = feed.shapes
 
 def get_vehicle_positions(route_filter=None):
+    """
+    Récupère les positions des véhicules en temps réel à partir de l'URL spécifiée.
+    Filtre les véhicules par route si un filtre est fourni.
+    """
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -56,16 +63,26 @@ def get_vehicle_positions(route_filter=None):
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value):
+    """
+    Filtre Jinja2 pour formater un timestamp en une chaîne lisible (heure:minute:seconde).
+    """
     return datetime.fromtimestamp(value).strftime("%H:%M:%S")
 
 @app.route('/get_vehicle_positions', methods=['GET'])
 def vehicle_positions():
+    """
+    Endpoint pour récupérer les positions des véhicules en temps réel.
+    Peut être filtré par route_id.
+    """
     route_id = request.args.get('route_id')
     vehicles = get_vehicle_positions(route_filter=route_id)
     return jsonify(vehicles)
 
 @app.route('/', methods=['GET'])
 def index():
+    """
+    Page d'accueil affichant la liste des routes et les positions des véhicules.
+    """
     selected_route = request.args.get('route_id', '')
     vehicles = get_vehicle_positions(route_filter=selected_route if selected_route else None)
 
@@ -84,10 +101,14 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    Page de connexion pour les utilisateurs.
+    Vérifie les informations d'identification et redirige vers la page d'accueil si elles sont correctes.
+    """
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username == 'admin' and password == '1234':
+        if username == 'admin' and password == '1234': # Pour tester avec un utilisateur admin
             session['user'] = {'name': 'Admin'}
             return redirect(url_for('index'))
         else:
@@ -96,15 +117,22 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """
+    Déconnecte l'utilisateur.
+    """
     session.pop('user', None)
     return redirect(url_for('index'))
 
 @app.route('/carte', methods=['GET'])
 def carte():
+    """
+    Génère et affiche une carte Folium avec les routes et arrêts GTFS.
+    Peut être filtrée par route_short_name et route_long_name.
+    """
     selected_route_short_name = request.args.get('route_short_name')
     selected_route_long_name = request.args.get('route_long_name')
 
-    # Obtenir les coordonnées de la boîte englobante
+    # Obtenir les coordonnées de l'étendue des arrêts
     bounding_box = feed.get_bbox()
     coordinates = [[lat, lon] for lon, lat in bounding_box['coordinates'][0]]
     center_lat = sum(p[0] for p in coordinates) / len(coordinates)
@@ -187,7 +215,7 @@ def carte():
         ).add_to(stops_group)
     stops_group.add_to(m)
 
-    # Ajouter la boîte englobante à la carte
+    # Ajouter l'étendue des arrêts
     bbox_group = FeatureGroup(name="Étendue géographique")
     folium.Polygon(
         locations=coordinates,
@@ -216,4 +244,4 @@ def carte():
                            selected_route_long_name=selected_route_long_name)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True)  # Mode debug activé ou non
